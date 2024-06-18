@@ -62,7 +62,7 @@ const checkZeroChangeStatus = () => {
       }
    });
 }
-
+handleZero.js文件里面的内容，这个文件导出的函数在上面内容中用到了
 import {
    useStatusStore
 } from '../store/index';
