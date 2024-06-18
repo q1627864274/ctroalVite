@@ -1,1 +1,179 @@
-111
+// 查询调零完成状态 
+const checkZeroChangeStatus = () => {
+   let writeData = {
+      commandId: '0x02',
+      subCommandId: '0x10',
+      data: []
+   }
+   sendPortData(writeData, res => {
+      const zeroDialogContent =  {
+         zeroResultModalVisible:false,
+         zeroResultModalVisibleStatus: 'warn',
+         zeroResultModalVisibleResult: 'xxx'
+      }
+      if (res.data && res.data.length > 0) {
+         if (res.data[0] && res.data[0] === '00') {
+            resetZeroChange();
+            StatusStore.changeTimeLineArry(`[info] 调零完成`)
+         }
+         //  else if (res.data[0] !== '00' && zeroChangeNums.value === 20) {
+            // resetZeroChange();
+            // HuiMessage({
+            //    message: '调零失败',
+            //    duration: 3000,
+            //    type: 'error',
+            // });
+            // StatusStore.changeTimeLineArry(`[error] 调零失败`)
+
+         // }
+         else if (res.data[0] && res.data[0] === '01') {
+            StatusStore.changeTimeLineArry(`[info] 调零进行中`)
+         }else if (res.data[1] && res.data[1] === '00') {
+            resetZeroChange();
+            HuiMessage({
+               message: '调零成功',
+               duration: 3000,
+               type: 'success',
+            });
+            StatusStore.changeTimeLineArry(`[info] 调零成功`)
+
+            Object.assign(zeroDialogContent, {
+               zeroResultModalVisible: true,
+               zeroResultModalVisibleStatus: 'success',
+               zeroResultModalVisibleResult: '调零成功'
+            })
+         }else if (res.data[1] && res.data[1] === '01') {
+            resetZeroChange();
+            HuiMessage({
+               message: '调零失败',
+               duration: 3000,
+               type: 'error',
+            });
+            StatusStore.changeTimeLineArry(`[error] 调零失败`)
+         }else if (res.data[2]) {
+            //  处理不同调零失败原因
+            const zeroDialogErrorContent =  handleZeroError(isDiffPressECAT.value, res.data[2])
+            Object.assign(zeroDialogContent,zeroDialogErrorContent)
+            // 关闭轮询
+            resetZeroChange();
+         }
+         const findZeroItem = formMachineType.value.find(item => item.label === '自动调零')
+         Object.assign(findZeroItem, zeroDialogContent)
+      }
+   });
+}
+
+import {
+   useStatusStore
+} from '../store/index';
+import {
+   HuiMessage
+} from '@hui/vue3'
+import {
+   nextTick
+} from 'vue'
+let StatusStore
+nextTick(() => {
+   StatusStore = useStatusStore()
+})
+export const handleZeroError = (status, resData) => {
+   const zeroDialogContent =  {
+      zeroResultModalVisible:false,
+      zeroResultModalVisibleStatus: 'warn',
+      zeroResultModalVisibleResult: 'xxx'
+   }
+   //热式失败的调零原因
+   if (!status) {
+      switch (resData) {
+         case '01':
+            HuiMessage({
+               message: 'SP不为0',
+               duration: 3000,
+               type: 'error',
+            });
+            StatusStore.changeTimeLineArry(`[error] 调零失败: SP不为0`)
+            Object.assign(zeroDialogContent, {
+               zeroResultModalVisible: true,
+               zeroResultModalVisibleStatus: 'error',
+               zeroResultModalVisibleResult: '调零失败: SP不为0'
+            })
+            break;
+         case '02':
+            HuiMessage({
+               message: '控阀电压不为0',
+               duration: 3000,
+               type: 'error',
+            });
+            StatusStore.changeTimeLineArry(`[error] 调零失败: 控阀电压不为0`)
+            Object.assign(zeroDialogContent, {
+               zeroResultModalVisible: true,
+               zeroResultModalVisibleStatus: 'error',
+               zeroResultModalVisibleResult: '调零失败: 控阀电压不为0'
+            })
+            break;
+         default:
+            break;
+      }
+      // 差压式调零失败原因
+   } else {
+      switch (resData) {
+         case '01':
+            HuiMessage({
+               message: '调零未开始',
+               duration: 3000,
+               type: 'error',
+            });
+            StatusStore.changeTimeLineArry(`[error] 调零失败: 调零未开始`)
+            Object.assign(zeroDialogContent, {
+               zeroResultModalVisible: true,
+               zeroResultModalVisibleStatus: 'error',
+               zeroResultModalVisibleResult: '调零失败: 调零未开始'
+            })
+            break;
+         case '02':
+            HuiMessage({
+               message: '调零重试中',
+               duration: 3000,
+               type: 'error',
+            });
+            StatusStore.changeTimeLineArry(`[error] 调零失败: 调零重试中`)
+            Object.assign(zeroDialogContent, {
+               zeroResultModalVisible: true,
+               zeroResultModalVisibleStatus: 'error',
+               zeroResultModalVisibleResult: '调零失败: 调零重试中'
+            })
+            break;
+         case '03':
+            HuiMessage({
+               message: '调零超时',
+               duration: 3000,
+               type: 'error',
+            });
+            StatusStore.changeTimeLineArry(`[error] 调零失败: 调零超时`)
+            Object.assign(zeroDialogContent, {
+               zeroResultModalVisible: true,
+               zeroResultModalVisibleStatus: 'error',
+               zeroResultModalVisibleResult: '调零失败: 调零超时'
+            })
+            break;
+         case '04':
+            HuiMessage({
+               message: '阀门不是全开状态',
+               duration: 3000,
+               type: 'error',
+            });
+            StatusStore.changeTimeLineArry(`[error] 调零失败: 阀门不是全开状态`)
+            Object.assign(zeroDialogContent, {
+               zeroResultModalVisible: true,
+               zeroResultModalVisibleStatus: 'error',
+               zeroResultModalVisibleResult: '调零失败: 阀门不是全开状态'
+            })
+            break;
+         default:
+            break;
+      }
+   }
+   return zeroDialogContent
+}
+
+优化上述函数
