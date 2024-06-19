@@ -1,1 +1,13 @@
-checkZeroChangeStatus 和  handleZeroError 这两个函数属于不同的vue文件
+     var myObject = {
+         // 给 a 定义一个 getter
+         get a() {
+            return this._a_;
+         },
+         // 给 a 定义一个 setter
+         set a(val) {
+            this._a_ = val * 2;
+         }
+      };
+      myObject.a = 2;
+      console.log(myObject.a)
+      // 上述函数中get和set是啥，这是什么写法，怎么没见过
