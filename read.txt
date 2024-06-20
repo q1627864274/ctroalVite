@@ -1,52 +1,55 @@
-        if (res.data && res.data.length > 0) {
-         if (res.data[0] && res.data[0] === '00') {
+// 查询调零完成状态 
+const checkZeroChangeStatus = () => {
+   let writeData = {
+      commandId: '0x02',
+      subCommandId: '0x10',
+      data: []
+   }
+   sendPortData(writeData, res => {
+      const zeroDialogContent =  {
+         zeroResultModalVisible:false,
+         zeroResultModalVisibleStatus: 'warn',
+         zeroResultModalVisibleResult: 'xxx'
+      }
+      console.log('查询调零完成状态', res)
+      if (res.data && res.data.length > 0) {
+         if (res.data[0] === '00') {
             resetZeroChange();
-            StatusStore.changeTimeLineArry(`[info] 调零完成`)
+            StatusStore.changeTimeLineArry(`[info] 调零完成`);
          }
-         //  else if (res.data[0] !== '00' && zeroChangeNums.value === 20) {
-            // resetZeroChange();
-            // HuiMessage({
-            //    message: '调零失败',
-            //    duration: 3000,
-            //    type: 'error',
-            // });
-            // StatusStore.changeTimeLineArry(`[error] 调零失败`)
-
-         // }
-         else if (res.data[0] && res.data[0] === '01') {
-            StatusStore.changeTimeLineArry(`[info] 调零进行中`)
-         }else if (res.data[1] && res.data[1] === '00') {
+         if (res.data[0] === '01') {
+            StatusStore.changeTimeLineArry(`[info] 调零进行中`);
+            return
+         }
+         if (res.data[1] === '00') {
             resetZeroChange();
-            HuiMessage({
-               message: '调零成功',
-               duration: 3000,
-               type: 'success',
-            });
-            StatusStore.changeTimeLineArry(`[info] 调零成功`)
-
+            StatusStore.changeTimeLineArry(`[info] 调零成功`);
             Object.assign(zeroDialogContent, {
-               zeroResultModalVisible: true,
-               zeroResultModalVisibleStatus: 'success',
-               zeroResultModalVisibleResult: '调零成功'
-            })
-         }else if (res.data[1] && res.data[1] === '01') {
-            resetZeroChange();
-            HuiMessage({
-               message: '调零失败',
-               duration: 3000,
-               type: 'error',
+                  zeroResultModalVisible: true,
+                  zeroResultModalVisibleStatus: 'success',
+                  zeroResultModalVisibleResult: '调零成功'
             });
-            StatusStore.changeTimeLineArry(`[error] 调零失败`)
-         }else if (res.data[2]) {
-            //  处理不同调零失败原因
-            const zeroDialogErrorContent =  handleZeroError(isDiffPressECAT.value, res.data[2])
-            Object.assign(zeroDialogContent,zeroDialogErrorContent)
-            // 关闭轮询
-            resetZeroChange();
+            updateZeroItem(zeroDialogContent)
+            return
          }
-         // 更新绑定的dialog
-         const findZeroItem = formMachineType.value.find(item => item.label === '自动调零')
-         Object.assign(findZeroItem, zeroDialogContent)
+         if (res.data[1] === '01') {
+            resetZeroChange();
+            StatusStore.changeTimeLineArry(`[error] 调零失败`);
+         }
+         if (res.data[2]) {
+            const zeroDialogErrorContent = handleZeroError(isDiffPressECAT.value, res.data[2]);
+            Object.assign(zeroDialogContent, zeroDialogErrorContent);
+            resetZeroChange();
+            updateZeroItem(zeroDialogContent)
+         }
+        
+      }
+   });
+}
+// 更新ZeroItem
+const updateZeroItem = (zeroDialogContent) => {
+   const findZeroItem = formMachineType.value.find(item => item.label === '自动调零');
+   Object.assign(findZeroItem, zeroDialogContent);
+}
 
-
-         // 这块逻辑写的有问题，应该是当data[0] === '01' 的时候就不能管下面逻辑了，当data[0] === '00'的时候，看data[1]如果为00 就不管了，如果是01 则要看data[2]的逻辑处理，修改下上述代码
+优化上述代码
